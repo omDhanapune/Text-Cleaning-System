@@ -1,0 +1,6 @@
+{
+  "name": "LexiClean - Intelligent Text Cleaning System",
+  "description": "Production-grade regex and automata-based text normalization engine for ML and NLP pipelines based on Theory of Computation and Deterministic Finite Automata (DFA).",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
