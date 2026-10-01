@@ -15,6 +15,12 @@ import {
   FileSpreadsheet,
   FileCode,
   Layers,
+  Code,
+  Link,
+  Smile,
+  CopyCheck,
+  Space,
+  Hash,
 } from 'lucide-react';
 import { CleanerConfig, CleaningResult } from '../types/cleaner';
 import {
@@ -94,26 +100,38 @@ export const DataFileInspector: React.FC<DataFileInspectorProps> = ({
   };
 
   // Dedicated Clean / Process Button Action
-  const handleProcessData = () => {
+  const handleProcessData = (overrideConfig?: CleanerConfig) => {
     if (!rawFileText.trim()) return;
 
     setIsProcessing(true);
+    const activeConfig = overrideConfig || config;
 
     setTimeout(() => {
       if (fileType === 'csv' || fileName.endsWith('.csv')) {
-        const res = cleanCsvText(rawFileText, 'raw_text', config);
+        const res = cleanCsvText(rawFileText, 'raw_text', activeConfig);
         setCleanedOutput(res.cleanedCsv);
         setCleaningResult({
           cleanedText: res.cleanedCsv,
           stats: res.stats,
         });
       } else {
-        const res = cleanText(rawFileText, config);
+        const res = cleanText(rawFileText, activeConfig);
         setCleanedOutput(res.cleanedText);
         setCleaningResult(res);
       }
       setIsProcessing(false);
-    }, 150);
+    }, 100);
+  };
+
+  const handleToggleRule = (key: keyof CleanerConfig) => {
+    setConfig((prev) => {
+      const updated = { ...prev, [key]: !prev[key] };
+      // If already cleaned, immediately re-run with updated rule
+      if (cleanedOutput) {
+        handleProcessData(updated);
+      }
+      return updated;
+    });
   };
 
   const handleCopy = () => {
@@ -256,6 +274,147 @@ export const DataFileInspector: React.FC<DataFileInspectorProps> = ({
         </div>
       </div>
 
+      {/* Live Rule Toggles Bar */}
+      <div className="bg-[#0e1524] border border-slate-800 rounded-xl p-3.5 shadow-sm">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2.5 border-b border-slate-800/60">
+          <div className="flex items-center space-x-2">
+            <SlidersHorizontal className="w-4 h-4 text-blue-400" />
+            <span className="text-xs font-semibold text-slate-200 uppercase tracking-wider">
+              Active Normalization Rules
+            </span>
+          </div>
+
+          <div className="flex items-center space-x-2">
+            <button
+              onClick={() => {
+                const defConfig: CleanerConfig = {
+                  stripHtml: true,
+                  stripUrls: true,
+                  stripEmojis: true,
+                  collapseDuplicates: true,
+                  compressWhitespace: true,
+                  stripUnwantedSymbols: true,
+                  stripEmails: false,
+                  stripPhoneNumbers: false,
+                  toLowerCase: false,
+                };
+                setConfig(defConfig);
+                if (cleanedOutput) handleProcessData(defConfig);
+              }}
+              className="text-[11px] text-slate-400 hover:text-slate-200 px-2 py-0.5 rounded bg-slate-800/60 hover:bg-slate-800 transition cursor-pointer"
+            >
+              Reset Rules
+            </button>
+            <button
+              onClick={() => {
+                const allConfig: CleanerConfig = {
+                  stripHtml: true,
+                  stripUrls: true,
+                  stripEmojis: true,
+                  collapseDuplicates: true,
+                  compressWhitespace: true,
+                  stripUnwantedSymbols: true,
+                  stripEmails: true,
+                  stripPhoneNumbers: true,
+                  toLowerCase: true,
+                };
+                setConfig(allConfig);
+                if (cleanedOutput) handleProcessData(allConfig);
+              }}
+              className="text-[11px] text-blue-400 hover:text-blue-300 px-2 py-0.5 rounded bg-blue-500/10 hover:bg-blue-500/20 border border-blue-500/30 transition cursor-pointer"
+            >
+              Enable All
+            </button>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-2 pt-2.5">
+          <button
+            onClick={() => handleToggleRule('stripHtml')}
+            className={`flex items-center space-x-1.5 p-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              config.stripHtml
+                ? 'bg-blue-600/15 border-blue-500/40 text-blue-300'
+                : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Code className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">HTML / XML</span>
+          </button>
+
+          <button
+            onClick={() => handleToggleRule('stripUrls')}
+            className={`flex items-center space-x-1.5 p-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              config.stripUrls
+                ? 'bg-blue-600/15 border-blue-500/40 text-blue-300'
+                : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Link className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">URLs & Links</span>
+          </button>
+
+          <button
+            onClick={() => handleToggleRule('stripEmojis')}
+            className={`flex items-center space-x-1.5 p-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              config.stripEmojis
+                ? 'bg-blue-600/15 border-blue-500/40 text-blue-300'
+                : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Smile className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Emojis & Pictos</span>
+          </button>
+
+          <button
+            onClick={() => handleToggleRule('stripUnwantedSymbols')}
+            className={`flex items-center space-x-1.5 p-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              config.stripUnwantedSymbols
+                ? 'bg-blue-600/15 border-blue-500/40 text-blue-300'
+                : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Hash className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Noise Symbols</span>
+          </button>
+
+          <button
+            onClick={() => handleToggleRule('collapseDuplicates')}
+            className={`flex items-center space-x-1.5 p-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              config.collapseDuplicates
+                ? 'bg-blue-600/15 border-blue-500/40 text-blue-300'
+                : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <CopyCheck className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Duplicates</span>
+          </button>
+
+          <button
+            onClick={() => handleToggleRule('compressWhitespace')}
+            className={`flex items-center space-x-1.5 p-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              config.compressWhitespace
+                ? 'bg-blue-600/15 border-blue-500/40 text-blue-300'
+                : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <Space className="w-3.5 h-3.5 shrink-0" />
+            <span className="truncate">Spaces & Tabs</span>
+          </button>
+
+          <button
+            onClick={() => handleToggleRule('toLowerCase')}
+            className={`flex items-center space-x-1.5 p-1.5 rounded-lg text-xs font-medium border transition cursor-pointer ${
+              config.toLowerCase
+                ? 'bg-emerald-600/15 border-emerald-500/40 text-emerald-300'
+                : 'bg-slate-900/60 border-slate-800 text-slate-500 hover:text-slate-300'
+            }`}
+          >
+            <span className="font-mono text-xs font-bold">aA</span>
+            <span className="truncate">Lowercasing</span>
+          </button>
+        </div>
+      </div>
+
       {/* Central Action Bar: The Requested Clean/Process Button */}
       <div className="bg-[#0e1628] border border-blue-500/30 rounded-xl p-3.5 flex flex-col sm:flex-row items-center justify-between gap-3 shadow-md shadow-blue-900/10">
         <div className="flex items-center space-x-3 text-xs">
@@ -274,7 +433,7 @@ export const DataFileInspector: React.FC<DataFileInspectorProps> = ({
 
         {/* PROMINENT PROCESS BUTTON */}
         <button
-          onClick={handleProcessData}
+          onClick={() => handleProcessData()}
           disabled={!rawFileText.trim() || isProcessing}
           className="w-full sm:w-auto px-6 py-2.5 rounded-lg bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-500 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold text-xs uppercase tracking-wider shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
         >
